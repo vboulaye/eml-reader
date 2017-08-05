@@ -16,7 +16,7 @@ const transliterate = require('transliteration').transliterate;
 const iconv = require('iconv-lite');
 
 const FIX_WRONG_ENCODING = true;
-const LOG = false;
+const LOG = true;
 
 function buildMonthlyDirName(outputDirectory, creationDate) {
   const date = creationDate.toISOString().slice(0, 7);// .replace(/:/g, '').replace(/-/g, '');
@@ -253,7 +253,7 @@ function processFile(sourceFile, outputDir, next) {
           email.attachments.forEach((attachment) => {
             if (attachment.filename) {
               const ext = path.extname(attachment.filename);
-              attachment.filename = path.basename(attachment.filename).slice(0, 40) + ext;
+              attachment.filename = path.basename(attachment.filename, ext).slice(0, 40) + ext;
             }
           });
 
