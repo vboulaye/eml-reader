@@ -15,8 +15,13 @@ const transliterate = require('transliteration').transliterate;
 
 const iconv = require('iconv-lite');
 
-const FIX_WRONG_ENCODING = true;
-const LOG = true;
+const FIX_WRONG_ENCODING = true; // transform utf-16 back to utf-8 (wrong encoding declared)
+const LOG = true; // console log
+
+// set a default user when nobody is defined
+const DEFAULT_USER = 'vincent boulaye';
+// how to identify ourselves
+const DEFAULT_USER_PATTERN = /boulaye/i;
 
 function buildMonthlyDirName(outputDirectory, creationDate) {
   const date = creationDate.toISOString().slice(0, 7);// .replace(/:/g, '').replace(/-/g, '');
@@ -119,8 +124,8 @@ function processFile(sourceFile, outputDir, next) {
 
           const targetFileName = `${subject}`;
 
-          const bakOutputDir = buildMonthlyDirName(path.resolve(outputDir, 'bak'), creationDate);
-          const mainOutputDir = buildMonthlyDirName(path.resolve(outputDir, 'archive'), creationDate);
+          const bakOutputDir = buildMonthlyDirName(path.resolve(outputDir, 'eml'), creationDate);
+          const mainOutputDir = buildMonthlyDirName(path.resolve(outputDir, 'out'), creationDate);
 
           // cannotmake it work asynchronously
           mkdirp.sync(bakOutputDir, 0o755);
@@ -140,12 +145,15 @@ function processFile(sourceFile, outputDir, next) {
     } else if (sourceFile.endsWith('.eml')) {
       simpleParser(buffer)
         .then((email) => {
+          const creationDate = email.date;
           // console.log(fileStat.name);
           //   const headers = [...email.headers];
-          const creationDate = email.date;
-
-          let fromText = email.from.text;
-          let from = email.from.value[0].name;
+          let from;
+          let fromText;
+          if (email.from) {
+            fromText = email.from.text || DEFAULT_USER;
+            from = email.from.value[0].name || DEFAULT_USER;
+          }
 
           let toText;
           let to;
@@ -173,24 +181,13 @@ function processFile(sourceFile, outputDir, next) {
             ;
           }
 
+          fromText = cleanMail(fromText || DEFAULT_USER);
+          from = cleanMail(from || fromText);
 
-          if (!from) {
-            to = fromText;
-          }
-          if (!to) {
-            to = toText;
-          }
+          toText = cleanMail(toText || DEFAULT_USER);
+          to = cleanMail(to || toText);
 
-          if (!to) {
-            to = 'vincent boulaye';
-            toText = 'vincent boulaye';
-          }
-          from = cleanMail(from);
-          fromText = cleanMail(fromText);
-          to = cleanMail(to);
-          toText = cleanMail(toText);
-
-          const author = (to && (!from || from.match(/boulaye/i))) ? `to ${to.slice(0, 40)}: ` : `from ${from}: `;
+          const author = (to && (!from || from.match(DEFAULT_USER_PATTERN))) ? `to ${to.slice(0, 40)}: ` : `from ${from}: `;
 
           const subjectLine = email.subject
             || email.text // no subject => tries the first line
@@ -222,6 +219,8 @@ function processFile(sourceFile, outputDir, next) {
             const text = `subject: ${email.subject}\nfrom: ${fromText}\nto: ${toText}\n\n${email.text}`;
             writePromise = writePromise
               .then(writeFileAsync(mainOutputDir, targetFileName, '.txt', text, creationDate, sha1));
+          } else {
+
           }
 
           // we do not want a separate file in all cases
@@ -230,7 +229,7 @@ function processFile(sourceFile, outputDir, next) {
             .startsWith('Conversation avec ');
 
           if (shouldOutputHtml) {
-            let html = email.html;// || email.textAsHtml;
+            let html = email.html; // || email.textAsHtml;
 
 
             if (html) {
@@ -239,7 +238,9 @@ function processFile(sourceFile, outputDir, next) {
                 // console.error(`######### file${sourceFile}`);
                 // console.error(`######### targetFileName${targetFileName}`);
                 // console.error(`######### default ${email.html.slice(0, 30)}`);
-                // console.error(`######### default ${iconv.decode(iconv.encode(email.html, 'utf-16'), 'utf-8').slice(2, 30)}`);
+                // console.error(`######### default ${iconv.decode(
+                // iconv.encode(email.html, 'utf-16'),
+                // 'utf-8').slice(2, 30)}`);
                 html = iconv.decode(iconv.encode(html, 'utf-16'), 'utf-8');
               }
 
@@ -334,14 +335,14 @@ function processDirectory(sourceDir, targetDir) {
 }
 
 
-const sourceDirParam = args[0] || '/media/uvba7442/mail/mail/test/eb/';
-const targetDirParam = args[1] || '/media/uvba7442/mail/mail/test/transform/';
+const sourceDirParam = args[0] || '/media/uvba7442/mail/mail/eml/';
+const targetDirParam = args[1] || '/media/uvba7442/mail/mail/test/';
 processDirectory(sourceDirParam, targetDirParam);
 
 
 // rimraf.sync('./target');
 // fs.mkdirSync('./target');
-// processFile('1.eml', './target', console.log);
+// processFile('msg-1-body.eml', './target', console.log);
 
 process.on('unhandledRejection', (reason) => {
   console.log('Reason: ', reason);

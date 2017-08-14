@@ -3,3 +3,4 @@ node_modules/
 *.iml
 target/
 1.eml
+imap-secret.js
