@@ -16,7 +16,7 @@ function processFile(fileStat, sourceDir, index, next) {
   const sourceFile = path.resolve(sourceDir, fileStat.name);
   fs.readFileAsync(sourceFile, {})
     .then((contents) => {
-      if (contents.length < 50000) {
+      if (contents.length < 100000) {
         const ext = path.extname(sourceFile);
         const filename = path.basename(sourceFile, ext);
         const filePath = sourceFile.substr(sourceDir.length + 1);
@@ -42,10 +42,17 @@ function processFile(fileStat, sourceDir, index, next) {
     });
 }
 
-function processDirectory(sourceDir, index) {
+function processDirectory(sourceDir, index, resolve, reject) {
 //
   function fileHandler(root, fileStat, next) {
-    if (!fileStat.name.endsWith('.txt')) {
+    if (!(
+      fileStat.name.endsWith('.eml')
+        || fileStat.name.endsWith('.ics')
+        || fileStat.name.endsWith('.txt')
+        || fileStat.name.endsWith('.html')
+        || fileStat.name.endsWith('.doc')
+        || fileStat.name.endsWith('.docx')
+    )) {
       next();
     } else {
       processFile(fileStat, root, index, next);
@@ -58,13 +65,17 @@ function processDirectory(sourceDir, index) {
       console.error(`[ERROR] ${n.name}`);
       console.error(n.error.message || (`${n.error.code}: ${n.error.path}`));
     });
+    reject(nodeStatsArray);
     next();
   }
 
   function endHandler(root, nodeStatsArray, next) {
-    const indexPath = `target/searchIndex-${path.basename(sourceDir)}.json`;
+    const indexDir = path.resolve(sourceDir, '../index');
+    mkdirp.sync(indexDir);
+    const indexPath = path.resolve(indexDir, `searchIndex-${path.basename(sourceDir)}.json`);
     console.log(`all done for ${indexPath}`);
     fs.writeFileAsync(indexPath, JSON.stringify(index), {});
+    resolve();
   }
 
 
@@ -79,18 +90,18 @@ function processDirectory(sourceDir, index) {
 mkdirp('./target');
 
 
-const sourceDir = path.resolve('/media/uvba7442/mail/mail/test/out');
+const sourceDir = path.resolve('/media/uvba7442/mail/mail/test/eml');
 
 fs.readdirAsync(sourceDir)
   .then(files =>
-    Promise.all(
-      files.map(
-        file => fs
-          .statAsync(path.resolve(sourceDir, file))
-          .then((fileStats) => {
-            if (fileStats.isDirectory()) {
-              // create the index
-              const index = lunr(function () {
+    Promise.each(files,
+      file => fs
+        .statAsync(path.resolve(sourceDir, file))
+        .then((fileStats) => {
+          if (fileStats.isDirectory()) {
+            // create the index
+            return new Promise((resolve, reject) => {
+              lunr(function () {
                 // boost increases the importance of words found in this field
                 this.field('title', { boost: 10 });
                 this.field('content');
@@ -98,11 +109,14 @@ fs.readdirAsync(sourceDir)
                 // the id
                 this.ref('href');
 
-                processDirectory(path.resolve(sourceDir, file), this);
+                processDirectory(path.resolve(sourceDir, file), this, resolve, reject);
               });
             }
-          })
-      )
+            );
+          }
+          return null;
+        })
+
     )
   );
 

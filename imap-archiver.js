@@ -5,13 +5,13 @@ const mkdirp = require('mkdirp');
 const path = require('path');
 
 
-// const outputDir = path.resolve('./target/mail');
-const outputDir = path.resolve('/media/uvba7442/mail/mail/imap/');
-// const BOX = 'INBOX';
-const BOX = 'Éléments envoyés';
-//const BOX = 'Calendrier';
-const START_DATE = Date.parse('2015-07-01');
-const END_DATE = Date.parse('2016-12-31');
+ const outputDir = path.resolve('./target/mail');
+// const outputDir = path.resolve('/media/uvba7442/mail/mail/imap/');
+const BOX = 'INBOX';
+// const BOX = 'Éléments envoyés';
+// const BOX = 'Calendrier';
+const START_DATE = Date.parse('2017-01-01');
+const END_DATE = Date.parse('2017-12-31');
 
 
 mkdirp(outputDir);

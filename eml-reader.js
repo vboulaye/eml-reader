@@ -205,8 +205,8 @@ function processFile(sourceFile, outputDir, next) {
           ;
           const targetFileName = author + saneName;
 
-          const bakOutputDir = buildMonthlyDirName(path.resolve(outputDir, 'bak'), creationDate);
-          const mainOutputDir = buildMonthlyDirName(path.resolve(outputDir, 'archive'), creationDate);
+          const bakOutputDir = buildMonthlyDirName(path.resolve(outputDir, 'eml'), creationDate);
+          const mainOutputDir = buildMonthlyDirName(path.resolve(outputDir, 'out'), creationDate);
 
 
           mkdirp.sync(bakOutputDir, 0o755);
@@ -335,8 +335,8 @@ function processDirectory(sourceDir, targetDir) {
 }
 
 
-const sourceDirParam = args[0] || '/media/uvba7442/mail/mail/eml/';
-const targetDirParam = args[1] || '/media/uvba7442/mail/mail/test/';
+const sourceDirParam = args[0] || './target/mail/';
+const targetDirParam = args[1] || './target/extract/';
 processDirectory(sourceDirParam, targetDirParam);
 
 
