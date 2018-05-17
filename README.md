@@ -62,3 +62,6 @@ eml-reader <source> <target>
 some options at the top of the file:
 const FIX_WRONG_ENCODING = true; // transform utf-16 back to utf-8 (wrong encoding declared)
 const LOG = true; // console log
+
+
+then we can delete everything wth the imap-deleter

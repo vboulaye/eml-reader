@@ -152,7 +152,7 @@ function processFile(sourceFile, outputDir, next) {
           let fromText;
           if (email.from) {
             fromText = email.from.text || DEFAULT_USER;
-            from = email.from.value[0].name || DEFAULT_USER;
+            from = (email.from.value[0] || {}).name || DEFAULT_USER;
           }
 
           let toText;

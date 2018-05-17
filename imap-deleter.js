@@ -1,8 +1,6 @@
 const Promise = require('bluebird');
 
-const BOX = 'INBOX';
-// const BOX = 'Éléments envoyés';
-// const BOX = 'Calendrier';
+const BOXES = ['INBOX', 'Éléments envoyés', 'Calendrier'];
 const START_DATE = Date.parse('2017-01-01');
 const END_DATE = Date.parse('2017-12-31');
 
@@ -14,10 +12,11 @@ const imap = Promise.promisifyAll(imapConnection);
 
 imap.once('ready', () => {
   // open the box in update mode
-  imap.openBoxAsync(BOX, /* readOnly: */false)
+
+  Promise.each(BOXES, boxName => imap.openBoxAsync(boxName, /* readOnly: */false)
 
     .then((box) => {
-      console.log(`box ${box.name}`);
+      console.log(`opened box ${box.name}`);
       return box;
     })
     .then(() => imap.searchAsync([['SINCE', START_DATE], ['BEFORE', END_DATE]]))
@@ -25,14 +24,13 @@ imap.once('ready', () => {
       console.log(`## found ${messages.length}`);
 
       return Promise.each(messages, message => imap.addFlagsAsync(message, '\\Deleted')
-        .then((x) => {
+        .then(() => {
           console.log(`### message ${message} deleted`);
         }));
     })
-    .then(() => imap.closeBoxAsync(/* autoExpunge: */true))
+    .then(() => imap.closeBoxAsync(/* autoExpunge: */true)))
     .then(() => {
-
-      console.log(`### inbox closed`);
+      console.log('### all inbox closed');
       imap.end();
     });
 });

@@ -5,11 +5,9 @@ const mkdirp = require('mkdirp');
 const path = require('path');
 
 
- const outputDir = path.resolve('./target/mail');
+const outputDir = path.resolve('./target/mail');
 // const outputDir = path.resolve('/media/uvba7442/mail/mail/imap/');
-const BOX = 'INBOX';
-// const BOX = 'Éléments envoyés';
-// const BOX = 'Calendrier';
+const BOXES = ['INBOX', 'Éléments envoyés', 'Calendrier'];
 const START_DATE = Date.parse('2017-01-01');
 const END_DATE = Date.parse('2017-12-31');
 
@@ -27,7 +25,7 @@ function downloadMails(results) {
     const messages = [];
 
     console.log(`##### ${new Date().toISOString()} fetching `, results[0]);
-    const f = imap.fetch(results, {bodies: ''});// ,
+    const f = imap.fetch(results, { bodies: '' });// ,
     f.on('message', (msg, seqno) => {
       const message = { message: msg, seq: seqno };
       messages.push(message);
@@ -80,15 +78,7 @@ function downloadMails(results) {
 
 
 imap.once('ready', () => {
-  // imap.getBoxesAsync()
-  //   .then((box) => {
-  //     console.log('box ', box);
-  //     return box;
-  //   })
-
-
-  imap.openBoxAsync(BOX, true)
-
+  Promise.each(BOXES, boxName => imap.openBoxAsync(boxName, true)
     .then((box) => {
       console.log(`box ${box.name}`);
       return box;
@@ -106,8 +96,11 @@ imap.once('ready', () => {
         return downloadMails(resultBloc);
       });
     })
-
-    .then(() => { imap.end(); });
+  )
+    .then(() => {
+      console.log('ending the imap connection');
+      imap.end();
+    });
 });
 
 imap.once('error', (err) => {
@@ -117,5 +110,6 @@ imap.once('error', (err) => {
 imap.once('end', () => {
   console.log('Connection ended');
 });
+
 
 imap.connect();
