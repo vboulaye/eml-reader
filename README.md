@@ -43,6 +43,9 @@ const END_DATE = Date.parse('2016-12-31');
 
 warning: for some reason calendar items cannot be exported
 
+```
+./imap-archiver.js
+```
 
 then prune empty directories and duplicates
 

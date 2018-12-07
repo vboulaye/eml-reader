@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const Promise = require('bluebird');
 // const Imap = require('imap');
 const fs = Promise.promisifyAll(require('fs'));
@@ -8,8 +10,9 @@ const path = require('path');
 const outputDir = path.resolve('./target/mail');
 // const outputDir = path.resolve('/media/uvba7442/mail/mail/imap/');
 const BOXES = ['INBOX', 'Éléments envoyés', 'Calendrier'];
-const START_DATE = Date.parse('2017-01-01');
-const END_DATE = Date.parse('2017-12-31');
+const START_DATE = Date.parse('2018-01-01');
+const END_DATE = Date.parse('2018-07-31');
+//const END_DATE = Date.parse('2018-12-31');
 
 
 mkdirp(outputDir);

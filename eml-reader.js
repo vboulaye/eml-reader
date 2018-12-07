@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /* eslint-disable no-bitwise,no-param-reassign */
 const args = process.argv.slice(2);
 const simpleParser = require('mailparser').simpleParser;
