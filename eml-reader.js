@@ -1,19 +1,19 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --stack-size=16000
 
 /* eslint-disable no-bitwise,no-param-reassign */
 const args = process.argv.slice(2);
-const simpleParser = require('mailparser').simpleParser;
+const { simpleParser } = require('mailparser');
 const walk = require('walk');
 const path = require('path');
 const moment = require('moment');
 const Promise = require('bluebird');
 const fs = Promise.promisifyAll(require('fs'));
 const mkdirp = require('mkdirp');
-const Utimes = Promise.promisifyAll(require('@ronomon/utimes'));
+const utimes = require('utimes');
 const rimraf = require('rimraf');
 // const waitOnAsync = Promise.promisify(require('wait-on'));
 const CryptoJS = require('crypto-js');
-const transliterate = require('transliteration').transliterate;
+const { transliterate } = require('transliteration');
 
 const iconv = require('iconv-lite');
 
@@ -43,7 +43,6 @@ function buildMonthlyDirName(outputDirectory, creationDate) {
 //   });
 // }
 
-
 function cleanupName(name) {
   return transliterate(name)
     .replace(/_+/g, '_')
@@ -55,10 +54,8 @@ function cleanupName(name) {
   ;
 }
 
-
 function writeFileAsync(outputDirectory, targetFileName, extension, buffer, creationDate, sha1) {
   const fileNameEscaped = cleanupName(targetFileName);
-
 
   const saneNameSha1 = `${fileNameEscaped} [${sha1}]${extension}`;
 
@@ -67,21 +64,20 @@ function writeFileAsync(outputDirectory, targetFileName, extension, buffer, crea
   if (LOG) console.log(`writing ${targetBasePath}`);
   return fs.openAsync(targetBasePath,
     fs.constants.O_WRONLY
-    | fs.constants.O_CREAT
-    | fs.constants.O_TRUNC
-    | fs.constants.O_SYNC
-    , 0o444)
+        | fs.constants.O_CREAT
+        | fs.constants.O_TRUNC
+        | fs.constants.O_SYNC,
+    0o444)
     .catch((err) => {
       console.error(err.stack);
       throw err;
     })
-    .then(fd => fs.writeFileAsync(fd, buffer, {})
-      .then(() => fd))
+    .then((fd) => fs.writeFileAsync(fd, buffer, {}).then(() => fd))
     .catch((err) => {
       console.error(err);
       throw err;
     })
-    .then(fd => fs.closeAsync(fd))
+    .then((fd) => fs.closeAsync(fd))
     .catch((err) => {
       console.error(err);
       throw err;
@@ -91,20 +87,24 @@ function writeFileAsync(outputDirectory, targetFileName, extension, buffer, crea
       const btime = creationDateEpoc;
       const mtime = creationDateEpoc;
       const atime = creationDateEpoc;
-      return Utimes.utimesAsync(targetBasePath, btime, mtime, atime);
+      return utimes.utimes(targetBasePath, {btime, mtime, atime});
     })
     .catch((err) => {
       console.error(err);
       throw err;
-    })
-  ;
+    });
 }
-
 
 function processFile(sourceFile, outputDir, next) {
   if (LOG) console.log('reading', sourceFile);
   fs.readFile(sourceFile, (err, buffer) => {
+    if (err) {
+      console.error(err);
+      next();
+      return;
+    }
     if (!buffer) {
+      next();
       return;
     }
 
@@ -114,7 +114,6 @@ function processFile(sourceFile, outputDir, next) {
     //        const subdir = path.relative(path.normalize(sourceDir), root);
     // const sourceExtension = path.extname(fileStat.name);
     const sourceExtension = path.extname(sourceFile);
-
 
     if (sourceExtension.endsWith('.ics')) {
       simpleParser(buffer)
@@ -153,8 +152,8 @@ function processFile(sourceFile, outputDir, next) {
           let from;
           let fromText;
           if (email.from) {
-            fromText = email.from.text || DEFAULT_USER;
-            from = (email.from.value[0] || {}).name || DEFAULT_USER;
+            fromText = email.from.text || DEFAULT_USER;
+            from = (email.from.value[0] || {}).name || DEFAULT_USER;
           }
 
           let toText;
@@ -179,8 +178,7 @@ function processFile(sourceFile, outputDir, next) {
               .replace(/\s+DTSI\/DESI/, '')
               .replace(/\s+IMT\/OLPS/, '')
               .replace(/\s+IST\/ISAD/, '')
-              .replace(/\s+SCE/, '')
-            ;
+              .replace(/\s+SCE/, '');
           }
 
           fromText = cleanMail(fromText || DEFAULT_USER);
@@ -192,9 +190,8 @@ function processFile(sourceFile, outputDir, next) {
           const author = (to && (!from || from.match(DEFAULT_USER_PATTERN))) ? `to ${to.slice(0, 40)}: ` : `from ${from}: `;
 
           const subjectLine = email.subject
-            || email.text // no subject => tries the first line
-            || 'no-subject';
-
+                        || email.text // no subject => tries the first line
+                        || 'no-subject';
 
           const subject = subjectLine
             .replace(/^\s+/, '') // remove the first blanks and line feeds
@@ -203,20 +200,15 @@ function processFile(sourceFile, outputDir, next) {
           const saneName = subject.slice(0, 120)
             .replace(/^Conversation avec (.{1,70})$/, `Chat with $1 on ${creationDate.toISOString()}`)
             .replace(/^(RE\s*:\s*)+(.*)$/i, '$2 (RE)')
-            .replace(/^(TR\s*:\s*)+(.*)$/i, '$2 (TR)')
-          ;
+            .replace(/^(TR\s*:\s*)+(.*)$/i, '$2 (TR)');
           const targetFileName = author + saneName;
 
           const bakOutputDir = buildMonthlyDirName(path.resolve(outputDir, 'eml'), creationDate);
           const mainOutputDir = buildMonthlyDirName(path.resolve(outputDir, 'out'), creationDate);
 
-
           mkdirp.sync(bakOutputDir, 0o755);
           mkdirp.sync(mainOutputDir, 0o755);
-          let writePromise =
-            writeFileAsync(bakOutputDir, targetFileName, '.eml', buffer, creationDate, sha1)
-          ;
-
+          let writePromise = writeFileAsync(bakOutputDir, targetFileName, '.eml', buffer, creationDate, sha1);
           if (email.text) {
             const text = `subject: ${email.subject}\nfrom: ${fromText}\nto: ${toText}\n\n${email.text}`;
             writePromise = writePromise
@@ -231,8 +223,7 @@ function processFile(sourceFile, outputDir, next) {
             .startsWith('Conversation avec ');
 
           if (shouldOutputHtml) {
-            let html = email.html; // || email.textAsHtml;
-
+            let { html } = email; // || email.textAsHtml;
 
             if (html) {
               // encoding is wronlgy set for som mails
@@ -247,7 +238,8 @@ function processFile(sourceFile, outputDir, next) {
               }
 
               writePromise = writePromise
-                .then(writeFileAsync(mainOutputDir, targetFileName, '.html', html, creationDate, sha1));
+                .then(writeFileAsync(mainOutputDir, targetFileName, '.html', html, creationDate, sha1))
+                  .then( () => console.log("ok"));
             }
           }
 
@@ -296,15 +288,16 @@ function processFile(sourceFile, outputDir, next) {
                 ` - ${attachment.filename}`, attachment.content, creationDate, sha1));
           });
 
-          return writePromise;
+          return writePromise       ;
         })
-        .then(next);
+
+        .then(() => next());
     } else {
       throw new Error(`unknown file type ${sourceFile}`);
     }
   });
-}
 
+}
 
 function processDirectory(sourceDir, targetDir) {
 //
@@ -313,8 +306,8 @@ function processDirectory(sourceDir, targetDir) {
     processFile(sourceFile, targetDir, next);
   }
 
-
   function errorsHandler(root, nodeStatsArray, next) {
+    console.error('[ERROR]');
     nodeStatsArray.forEach((n) => {
       console.error(`[ERROR] ${n.name}`);
       console.error(n.error.message || (`${n.error.code}: ${n.error.path}`));
@@ -326,8 +319,9 @@ function processDirectory(sourceDir, targetDir) {
     console.log('all done');
   }
 
-
+  console.log(`rimraf ${targetDir}`);
   rimraf.sync(targetDir);
+  console.log(`mkdirSync ${targetDir}`);
   fs.mkdirSync(targetDir);
 
   const walker = walk.walk(sourceDir, { followLinks: false });
@@ -336,11 +330,9 @@ function processDirectory(sourceDir, targetDir) {
   walker.on('end', endHandler);
 }
 
-
-const sourceDirParam = args[0] || './target/mail/';
-const targetDirParam = args[1] || './target/extract/';
+const sourceDirParam = args[0] || './target/mail';
+const targetDirParam = args[1] || './target/extract';
 processDirectory(sourceDirParam, targetDirParam);
-
 
 // rimraf.sync('./target');
 // fs.mkdirSync('./target');

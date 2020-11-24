@@ -11,8 +11,8 @@ const outputDir = path.resolve('./target/mail');
 // const outputDir = path.resolve('/media/uvba7442/mail/mail/imap/');
 const BOXES = ['INBOX', 'Éléments envoyés', 'Calendrier'];
 const START_DATE = Date.parse('2018-01-01');
-const END_DATE = Date.parse('2018-07-31');
-//const END_DATE = Date.parse('2018-12-31');
+//const END_DATE = Date.parse('2018-07-31');
+const END_DATE = Date.parse('2019-12-31');
 
 
 mkdirp(outputDir);

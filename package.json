@@ -5,32 +5,33 @@
   "main": "eml-reader.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "eslint": "eslint ."
+    "eslint": "eslint .",
+    "archive": "node --tls-min-v1.0 ./imap-archiver.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ronomon/utimes": "^2.0.0",
-    "bluebird": "^3.5.0",
-    "crypto-js": "^3.1.9-1",
+    "utimes": "^4.0.2",
+    "bluebird": "^3.7.2",
+    "crypto-js": "^4.0.0",
     "ee-mime-decoder": "^0.1.13",
-    "ee-stream-collector": "latest",
-    "iconv-lite": "latest",
+    "ee-stream-collector": "^0.1.5",
+    "iconv-lite": "^0.6.2",
     "imap": "^0.8.19",
-    "lunr": "^2.1.2",
-    "lunr-languages": "^1.0.0",
-    "mailparser": "^2.0.5",
-    "mailsplit": "^4.0.0",
-    "mkdirp": "latest",
-    "moment": "^2.22.2",
-    "rimraf": "latest",
-    "transliteration": "^1.6.2",
-    "wait-on": "^2.0.2",
-    "walk": "^2.3.9"
+    "lunr": "^2.3.9",
+    "lunr-languages": "^1.4.0",
+    "mailparser": "^3.0.0",
+    "mailsplit": "^5.0.0",
+    "mkdirp": "^1.0.4",
+    "moment": "^2.29.1",
+    "rimraf": "^3.0.2",
+    "transliteration": "^2.2.0",
+    "wait-on": "^5.2.0",
+    "walk": "^2.3.14"
   },
   "devDependencies": {
-    "eslint": "^5.9.0",
-    "eslint-config-airbnb-base": "^11.3.1",
-    "eslint-plugin-import": "^2.14.0"
+    "eslint": "^7.14.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1"
   }
 }
