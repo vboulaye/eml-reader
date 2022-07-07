@@ -23,7 +23,7 @@
     "mailparser": "^3.0.0",
     "mailsplit": "^5.0.0",
     "mkdirp": "^1.0.4",
-    "moment": "^2.29.1",
+    "moment": "^2.29.4",
     "rimraf": "^3.0.2",
     "transliteration": "^2.2.0",
     "wait-on": "^5.2.0",
